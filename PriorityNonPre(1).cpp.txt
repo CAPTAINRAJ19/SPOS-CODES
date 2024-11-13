@@ -1,0 +1,76 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+void findAvgTime(int n, int arrivalTime[], int burstTime[], int priority[]) {
+    deque<int> readyQueue;
+    vector<int> startTime(n), completionTime(n), waitingTime(n), turnAroundTime(n);
+    
+    int time = 0;  // Tracks the current time
+    int completed = 0;  // Tracks number of completed processes
+    double totalWaitingTime = 0, totalTurnAroundTime = 0;
+    vector<bool> addedToQueue(n, false);
+
+    while (completed < n) {
+        // Add processes to the ready queue as they arrive
+        for (int i = 0; i < n; i++) {
+            if (arrivalTime[i] <= time && !addedToQueue[i] && completionTime[i] == 0) {
+                readyQueue.push_back(i);
+                addedToQueue[i] = true;
+            }
+        }
+
+        // Sort the ready queue by priority (non-preemptive)
+        if (!readyQueue.empty()) {
+            sort(readyQueue.begin(), readyQueue.end(), [&](int a, int b) {
+                return priority[a] > priority[b];
+            });
+
+            int current = readyQueue.front();
+            readyQueue.pop_front();
+
+            // Calculate start, completion, waiting, and turnaround times
+            startTime[current] = max(time, arrivalTime[current]);
+            completionTime[current] = startTime[current] + burstTime[current];
+            waitingTime[current] = startTime[current] - arrivalTime[current];
+            turnAroundTime[current] = completionTime[current] - arrivalTime[current];
+
+            // Update total waiting time and turnaround time
+            totalWaitingTime += waitingTime[current];
+            totalTurnAroundTime += turnAroundTime[current];
+
+            // Move the time forward to the completion time of the current process
+            time = completionTime[current];
+            completed++;
+        } else {
+            // If no process is ready, move time forward
+            time++;
+        }
+    }
+
+    // Display results
+    cout << "Process No.\tArrival Time\tBurst Time\tPriority\tStart Time\tCompletion Time\tWaiting Time\tTurn Around Time\n";
+    for (int i = 0; i < n; i++) {
+        cout << i + 1 << "\t\t" << arrivalTime[i] << "\t\t" << burstTime[i] << "\t\t" << priority[i] << "\t\t"
+             << startTime[i] << "\t\t" << completionTime[i] << "\t\t" << waitingTime[i] << "\t\t" << turnAroundTime[i] << endl;
+    }
+    
+    cout << "\nAverage Waiting Time: " << fixed << setprecision(2) << totalWaitingTime / n << endl;
+    cout << "Average Turnaround Time: " << fixed << setprecision(2) << totalTurnAroundTime / n << endl;
+}
+
+int main() {
+    int n;
+    cout << "Enter the total number of processes: ";
+    cin >> n;
+    
+    int arrivalTime[n], burstTime[n], priority[n];
+
+    for (int i = 0; i < n; i++) {
+        cout << "Enter the Arrival time, Burst time, and Priority respectively for process " << i + 1 << ": ";
+        cin >> arrivalTime[i] >> burstTime[i] >> priority[i];
+    }
+
+    findAvgTime(n, arrivalTime, burstTime, priority);
+
+    return 0;
+}
